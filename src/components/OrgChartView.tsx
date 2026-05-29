@@ -1,211 +1,213 @@
 // src/components/OrgChartView.tsx
 'use client';
 
-export default function OrgChartView() {
+import { useState, ReactNode } from 'react';
+
+// အရောင် အမျိုးအစားများကို တိတိကျကျ သတ်မှတ်ပေးခြင်း (TypeScript Error ဖြေရှင်းရန်)
+type ThemeColor = 'blue' | 'emerald' | 'amber';
+
+interface NodeProps {
+    title: string;
+    subtitle?: string;
+    color?: ThemeColor;
+}
+
+interface VLineProps {
+    color?: ThemeColor;
+    height?: string;
+}
+
+interface ChildNodeProps {
+    children: ReactNode;
+    isFirst?: boolean;
+    isLast?: boolean;
+    isOnly?: boolean;
+    color?: ThemeColor;
+}
+
+export default function OrgChartView({ isAdmin = false }: { isAdmin?: boolean }) {
+    const [activeTab, setActiveTab] = useState<'state' | 'district' | 'township' | null>(null);
+
+    // --- အထောက်အကူပြု UI Components များ ---
+    const Node = ({ title, subtitle, color = 'blue' }: NodeProps) => {
+        const borderColors: Record<ThemeColor, string> = { blue: 'border-blue-200', emerald: 'border-emerald-200', amber: 'border-amber-200' };
+        const bgColors: Record<ThemeColor, string> = { blue: 'bg-blue-50', emerald: 'bg-emerald-50', amber: 'bg-amber-50' };
+        const textColors: Record<ThemeColor, string> = { blue: 'text-blue-800', emerald: 'text-emerald-800', amber: 'text-amber-800' };
+        
+        return (
+            <div className={`border-2 ${borderColors[color]} ${bgColors[color]} p-3 md:p-4 rounded-2xl shadow-sm z-10 w-44 md:w-52 text-center relative mx-auto`}>
+                <h4 className={`font-bold text-[13px] md:text-sm leading-relaxed ${textColors[color]}`}>{title}</h4>
+                {subtitle && <p className="text-[11px] md:text-xs mt-1 text-slate-500 font-medium">{subtitle}</p>}
+            </div>
+        );
+    };
+
+    const VLine = ({ color = 'blue', height = 'h-6 md:h-8' }: VLineProps) => {
+        const bgs: Record<ThemeColor, string> = { blue: 'bg-blue-300', emerald: 'bg-emerald-300', amber: 'bg-amber-300' };
+        return <div className={`w-0.5 ${height} ${bgs[color]} mx-auto`}></div>;
+    };
+
+    const ChildNode = ({ children, isFirst, isLast, isOnly, color = 'blue' }: ChildNodeProps) => {
+        const bgs: Record<ThemeColor, string> = { blue: 'bg-blue-300', emerald: 'bg-emerald-300', amber: 'bg-amber-300' };
+        let topLineWidth = "w-full";
+        let topLinePosition = "left-0";
+        
+        if (isOnly) {
+            topLineWidth = "w-0";
+        } else if (isFirst) {
+            topLineWidth = "w-1/2";
+            topLinePosition = "right-0";
+        } else if (isLast) {
+            topLineWidth = "w-1/2";
+            topLinePosition = "left-0";
+        }
+
+        return (
+            <div className="flex flex-col items-center px-1 md:px-2 relative">
+                {!isOnly && <div className={`absolute top-0 h-0.5 ${bgs[color]} ${topLineWidth} ${topLinePosition}`}></div>}
+                {!isOnly && <div className={`w-0.5 h-6 md:h-8 ${bgs[color]}`}></div>}
+                <div>{children}</div>
+            </div>
+        );
+    };
+
     return (
-        <div className="animate-in pb-10 space-y-10">
-            
-            {/* ========================================================
-                ၁။ ပြည်နယ်ကုသရေးဦးစီးဌာန ဖွဲ့စည်းပုံ
-            ======================================================== */}
-            <div className="bg-blue-900 rounded-3xl md:rounded-4xl shadow-sm border border-slate-200 min-h-[80vh] p-4 md:p-8 text-white overflow-hidden relative">
-                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-500 rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
-                <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-indigo-500 rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
-                
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-center text-yellow-400 mb-8 md:mb-10 shadow-black drop-shadow-md relative z-10">
-                    ပြည်နယ်ကုသရေးဦးစီးဌာန ဖွဲ့စည်းပုံ
-                </h1>
-                
-                <div className="w-full overflow-x-auto relative z-10 pb-6 custom-scrollbar-hide-mobile">
-                    <div className="min-w-250 p-2 md:p-4">
-                        <div className="flex justify-center mb-12">
-                            <div className="bg-linear-to-b from-orange-400 to-orange-600 text-white px-8 py-4 rounded shadow-lg border-2 border-yellow-300 font-bold text-xl drop-shadow-xl">
-                                ပြည်နယ်ကုသရေးဦးစီးဌာနမှူး
-                            </div>
-                        </div>
-                        <div className="flex flex-col xl:flex-row justify-center gap-10 xl:gap-6">
-                            
-                            {/* ဒုတိယပြည်နယ်မှူး (ကုသရေး) အပိုင်း */}
-                            <div className="flex-1 flex flex-col items-center">
-                                <div className="bg-green-700 w-full xl:w-[90%] text-center py-3 rounded shadow-lg mb-4 font-bold text-lg border border-green-500">
-                                    ဒုတိယပြည်နယ်ကုသရေးဦးစီးဌာနမှူး(ကုသရေး)
-                                </div>
-                                <div className="bg-blue-950 w-3/4 xl:w-[80%] text-center py-2 border border-blue-400 rounded shadow-md mb-8 font-medium">
-                                    ဒုတိယညွှန်ကြားရေးမှူး<br/>ကုသရေးဦးစီးဌာနမှူး(ကုသရေး)
-                                </div>
-                                <div className="flex flex-wrap justify-center gap-4 mb-8">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className="bg-linear-to-b from-blue-400 to-blue-600 text-sm px-2 py-2 rounded shadow-md text-center w-36 h-16 flex items-center justify-center border border-blue-300 font-medium">လ/ထ ညွှန်မှူး<br/>(ဝယ်ယူ/ဖြန့်ဖြူး)</div>
-                                        <div className="bg-linear-to-b from-blue-500 to-blue-700 text-sm px-2 py-2 rounded shadow-md text-center w-36 h-16 flex items-center justify-center border border-blue-400 font-medium">လ/ထ ဆရာဝန်<br/>(ဝယ်ယူ/ဖြန့်ဖြူး)</div>
-                                    </div>
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className="bg-linear-to-b from-blue-400 to-blue-600 text-sm px-2 py-2 rounded shadow-md text-center w-36 h-16 flex items-center justify-center border border-blue-300 font-medium">လ/ထ ညွှန်မှူး<br/>(ကုသရေး)</div>
-                                        <div className="bg-linear-to-b from-blue-500 to-blue-700 text-sm px-2 py-2 rounded shadow-md text-center w-36 h-16 flex items-center justify-center border border-blue-400 font-medium">လ/ထ ဆရာဝန်<br/>(ကုသရေး)</div>
-                                    </div>
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className="bg-linear-to-b from-blue-400 to-blue-600 text-sm px-2 py-2 rounded shadow-md text-center w-36 h-16 flex items-center justify-center border border-blue-300 font-medium">လ/ထ ညွှန်မှူး<br/>(သူနာပြု)</div>
-                                        <div className="bg-linear-to-b from-blue-500 to-blue-700 text-sm px-2 py-2 rounded shadow-md text-center w-36 h-16 flex items-center justify-center border border-blue-400 font-medium">ဦးစီးအရာရှိ<br/>(သူနာပြု)</div>
-                                    </div>
-                                </div>
-                                <div className="bg-blue-800/80 border border-blue-400 p-4 rounded-lg text-sm w-full xl:w-[90%] text-center leading-relaxed shadow-inner font-medium">
-                                    ဌာနခွဲစာရေးကြီး(၁)ဦး ၊ အကြီးတန်းစာရေး(၂)ဦး ၊ အငယ်တန်းစာရေး(၃)ဦး ၊ ရုံးအကူ(၃)ဦး
-                                </div>
-                            </div>
+        <div className="animate-in pb-10">
+            <div className="bg-white p-4 md:p-8 rounded-3xl md:rounded-4xl shadow-sm border border-slate-200">
+                <header className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-6">
+                    <span className="bg-indigo-100 text-indigo-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-inner shrink-0">
+                        <i className="fa-solid fa-sitemap"></i>
+                    </span>
+                    <h3 className="text-xl md:text-2xl font-bold text-slate-800 leading-relaxed">
+                        ဖွဲ့စည်းပုံ (Organization Chart)
+                    </h3>
+                </header>
 
-                            {/* ဒုတိယပြည်နယ်မှူး (စီမံ/ဘဏ္ဍာ) အပိုင်း */}
-                            <div className="flex-1 flex flex-col items-center mt-10 xl:mt-0">
-                                <div className="bg-green-700 w-full xl:w-[90%] text-center py-3 rounded shadow-lg mb-4 font-bold text-lg border border-green-500">
-                                    ဒုတိယပြည်နယ်ကုသရေးဦးစီးဌာနမှူး(စီမံ/ဘဏ္ဍာ)
-                                </div>
-                                <div className="bg-blue-950 w-3/4 xl:w-[80%] text-center py-2 border border-blue-400 rounded shadow-md mb-8 font-medium">
-                                    ဒုတိယညွှန်ကြားရေးမှူး<br/>ကုသရေးဦးစီးဌာနမှူး(စီမံ/ဘဏ္ဍာ)
-                                </div>
-                                <div className="flex flex-wrap justify-center gap-4 mb-8">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className="bg-linear-to-b from-blue-400 to-blue-600 text-sm px-2 py-2 rounded shadow-md text-center w-36 h-16 flex items-center justify-center border border-blue-300 font-medium">လ/ထ ညွှန်မှူး<br/>(အုပ်ချုပ်/စီမံ)</div>
-                                        <div className="bg-linear-to-b from-blue-500 to-blue-700 text-sm px-2 py-2 rounded shadow-md text-center w-36 h-16 flex items-center justify-center border border-blue-400 font-medium">ဦးစီးအရာရှိ<br/>(အုပ်ချုပ်/စီမံ)</div>
-                                    </div>
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className="bg-linear-to-b from-blue-400 to-blue-600 text-sm px-2 py-2 rounded shadow-md text-center w-36 h-16 flex items-center justify-center border border-blue-300 font-medium">လ/ထ ညွှန်မှူး<br/>(ဘဏ္ဍာရေး)</div>
-                                        <div className="bg-linear-to-b from-blue-500 to-blue-700 text-sm px-2 py-2 rounded shadow-md text-center w-36 h-16 flex items-center justify-center border border-blue-400 font-medium">ဦးစီးအရာရှိ<br/>(ဘဏ္ဍာရေး)</div>
-                                    </div>
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className="bg-linear-to-b from-blue-400 to-blue-600 text-sm px-2 py-2 rounded shadow-md text-center w-36 h-16 flex items-center justify-center border border-blue-300 font-medium">လ/ထ ညွှန်မှူး<br/>(မှတ်တမ်း/လုပ်ငန်းစစ်)</div>
-                                        <div className="bg-linear-to-b from-blue-500 to-blue-700 text-sm px-2 py-2 rounded shadow-md text-center w-36 h-16 flex items-center justify-center border border-blue-400 font-medium">ဦးစီးအရာရှိ<br/>(မှတ်တမ်း/လုပ်ငန်းစစ်)</div>
-                                    </div>
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className="bg-linear-to-b from-blue-400 to-blue-600 text-sm px-2 py-2 rounded shadow-md text-center w-36 h-16 flex items-center justify-center border border-blue-300 font-medium">လ/ထ ညွှန်မှူး<br/>(အင်ဂျင်နီယာ)</div>
-                                        <div className="bg-linear-to-b from-blue-500 to-blue-700 text-sm px-2 py-2 rounded shadow-md text-center w-36 h-16 flex items-center justify-center border border-blue-400 font-medium">လ/ထ အင်ဂျင်နီယာ<br/>(အင်ဂျင်နီယာ)</div>
-                                    </div>
-                                </div>
-                                <div className="bg-blue-800/80 border border-blue-400 p-4 rounded-lg text-sm w-full xl:w-[90%] text-center leading-relaxed shadow-inner font-medium">
-                                    အငယ်တန်းအင်ဂျင်နီယာ(၃)ဦး ၊ ဌာနခွဲစာရေးကြီး(၁)ဦး ၊ စာရင်းကိုင်-၂(၁)ဦး ၊ အကြီးတန်းစာရေး(၂)ဦး ၊ စာရင်းကိုင်-၃(၁)ဦး ၊ အငယ်တန်းစာရေး(၃)ဦး ၊ စာရင်းကိုင်-၄(၁)ဦး ၊ ရုံးအကူ(၃)ဦး ၊ ယာဉ်မောင်း(၆)ဦး
+                {/* ရွေးချယ်ရန် ခလုတ် (၃) ခု */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <button 
+                        onClick={() => setActiveTab(activeTab === 'state' ? null : 'state')} 
+                        className={`flex items-center justify-center gap-2 p-4 rounded-2xl font-bold transition-all duration-300 ${activeTab === 'state' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 ring-2 ring-blue-600 ring-offset-2' : 'bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-600 border border-slate-200'}`}
+                    >
+                        <i className="fa-solid fa-building-flag text-lg"></i> 
+                        <span>ပြည်နယ်အဆင့်</span>
+                        <i className={`fa-solid fa-chevron-down ml-2 transition-transform ${activeTab === 'state' ? 'rotate-180' : ''}`}></i>
+                    </button>
+                    
+                    <button 
+                        onClick={() => setActiveTab(activeTab === 'district' ? null : 'district')} 
+                        className={`flex items-center justify-center gap-2 p-4 rounded-2xl font-bold transition-all duration-300 ${activeTab === 'district' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-600 ring-offset-2' : 'bg-slate-50 text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 border border-slate-200'}`}
+                    >
+                        <i className="fa-solid fa-building-user text-lg"></i> 
+                        <span>ခရိုင်အဆင့်</span>
+                        <i className={`fa-solid fa-chevron-down ml-2 transition-transform ${activeTab === 'district' ? 'rotate-180' : ''}`}></i>
+                    </button>
+
+                    <button 
+                        onClick={() => setActiveTab(activeTab === 'township' ? null : 'township')} 
+                        className={`flex items-center justify-center gap-2 p-4 rounded-2xl font-bold transition-all duration-300 ${activeTab === 'township' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 ring-2 ring-amber-500 ring-offset-2' : 'bg-slate-50 text-slate-600 hover:bg-amber-50 hover:text-amber-600 border border-slate-200'}`}
+                    >
+                        <i className="fa-solid fa-hospital text-lg"></i> 
+                        <span>မြို့နယ်အဆင့်</span>
+                        <i className={`fa-solid fa-chevron-down ml-2 transition-transform ${activeTab === 'township' ? 'rotate-180' : ''}`}></i>
+                    </button>
+                </div>
+
+                {!activeTab && (
+                    <div className="py-16 text-center text-slate-400 bg-slate-50 rounded-3xl border border-dashed border-slate-200 animate-in fade-in">
+                        <i className="fa-solid fa-hand-pointer text-4xl mb-4 text-blue-300 opacity-50"></i>
+                        <p className="font-medium text-sm md:text-base text-slate-500">အထက်ပါ ခလုတ်များကို နှိပ်၍ ဖွဲ့စည်းပုံများကို ကြည့်ရှုနိုင်ပါသည်</p>
+                    </div>
+                )}
+
+                {/* ပြည်နယ်အဆင့် ဖွဲ့စည်းပုံ */}
+                {activeTab === 'state' && (
+                    <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="w-full overflow-x-auto custom-scrollbar-hide-mobile bg-slate-50/50 rounded-3xl border border-slate-100 p-4 md:p-10">
+                            <div className="min-w-max flex flex-col items-center mx-auto">
+                                <Node title="ပြည်နယ်ကုသရေးဦးစီးဌာနမှူး" color="blue" />
+                                <VLine color="blue" />
+                                
+                                <div className="flex justify-center w-full">
+                                    <ChildNode isFirst color="blue">
+                                        <Node title="ဒုတိယပြည်နယ်ဦးစီးဌာနမှူး" subtitle="(စီမံ/ဘဏ္ဍာ)" color="blue" />
+                                        <VLine color="blue" />
+                                        <Node title="လက်ထောက်ညွှန်ကြားရေးမှူး" color="blue" />
+                                    </ChildNode>
+                                    
+                                    <ChildNode color="blue">
+                                        <Node title="ဒုတိယပြည်နယ်ဦးစီးဌာနမှူး" subtitle="(ကုသရေး)" color="blue" />
+                                        <VLine color="blue" />
+                                        <Node title="လက်ထောက်ညွှန်ကြားရေးမှူး" color="blue" />
+                                    </ChildNode>
+                                    
+                                    <ChildNode isLast color="blue">
+                                        <Node title="ဒုတိယပြည်နယ်ဦးစီးဌာနမှူး" subtitle="(ပြည်သူ့ကျန်းမာရေး)" color="blue" />
+                                        <VLine color="blue" />
+                                        <Node title="လက်ထောက်ညွှန်ကြားရေးမှူး" color="blue" />
+                                    </ChildNode>
                                 </div>
                             </div>
-
                         </div>
                     </div>
-                </div>
-            </div>
+                )}
 
-            {/* ========================================================
-                ၂။ ခရိုင်ကုသရေးဦးစီးဌာန ဖွဲ့စည်းပုံ
-            ======================================================== */}
-            <div className="bg-[#243b87] rounded-3xl md:rounded-4xl shadow-xl border border-slate-200 p-6 md:p-10 text-white relative">
-                
-                {/* ညာဘက်အပေါ်ထောင့်က Info Table (Mobile တွင် အပေါ်၌ပေါ်မည်) */}
-                <div className="relative md:absolute top-0 right-0 md:top-8 md:right-8 mb-6 md:mb-0 w-full md:w-64 bg-white text-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-200 text-xs md:text-sm">
-                    <div className="bg-[#4371d1] text-white p-2 md:p-3 text-center font-medium">ဆေးရုံ၏ဖွဲ့စည်းပုံတွင်ပြင်ဆင်တိုးချဲ့မည့်ဖွဲ့စည်းပုံအင်အား</div>
-                    <div className="flex justify-between p-2 border-b border-slate-100 bg-slate-50"><span className="pl-2">အရာထမ်း</span><span className="pr-2 font-bold">၁၂</span></div>
-                    <div className="flex justify-between p-2 border-b border-slate-100"><span className="pl-2">အမှုထမ်း</span><span className="pr-2 font-bold">၂၈</span></div>
-                    <div className="flex justify-between p-2 bg-slate-50"><span className="pl-2">စုစုပေါင်း</span><span className="pr-2 font-bold">၄၀</span></div>
-                </div>
-
-                <h2 className="text-2xl md:text-3xl font-bold text-center text-[#fbbc04] mb-8 md:mb-12 mt-2 md:mt-4">
-                    ခရိုင်ကုသရေးဦးစီးဌာန ဖွဲ့စည်းပုံ
-                </h2>
-
-                <div className="w-full overflow-x-auto custom-scrollbar-hide-mobile">
-                    <div className="min-w-200 flex flex-col items-center pb-4">
-                        
-                        {/* Top Node */}
-                        <div className="bg-[#d9771e] border border-[#e67e22] text-white px-8 py-4 rounded-lg font-medium text-base md:text-lg mb-10 text-center shadow-md">
-                            ဆေးရုံအုပ်ကြီး / ခရိုင်ကုသရေးဦးစီးဌာနမှူး<br/>(၃၄၁၀၀၀-၄၀၀၀-၃၆၁၀၀၀)
-                        </div>
-
-                        {/* 3 Columns */}
-                        <div className="flex w-full gap-6 justify-between items-stretch">
-                            
-                            {/* Column 1 */}
-                            <div className="flex-1 flex flex-col gap-5 items-center w-1/3">
-                                <div className="bg-[#268a35] border border-[#27ae60] w-full py-3 rounded-lg text-center font-medium shadow-sm">ဒုတိယခရိုင်ကုသရေးဦးစီးဌာနမှူး(ကုသရေး)</div>
-                                <div className="border border-[#7c93d9] w-[80%] py-3 rounded-lg text-center text-sm font-medium">လ/ထ ညွှန်ကြားရေးမှူး<br/>(ကုသရေး)</div>
-                                <div className="grid grid-cols-2 gap-3 w-full">
-                                    <div className="bg-[#4371d1] border border-[#5a87e8] rounded-lg p-3 text-center text-sm flex items-center justify-center shadow-sm">လ/ထဆရာဝန်<br/>(ဝယ်ယူ/ဖြန့်ဖြူး)</div>
-                                    <div className="bg-[#4371d1] border border-[#5a87e8] rounded-lg p-3 text-center text-sm flex items-center justify-center shadow-sm">လ/ထဆရာဝန်<br/>(ကုသရေး)</div>
-                                    <div className="bg-[#4371d1] border border-[#5a87e8] rounded-lg p-3 text-center text-sm flex items-center justify-center shadow-sm col-span-2">ဦးစီးအရာရှိ<br/>(သူနာပြု)</div>
-                                </div>
-                                <div className="border border-[#7c93d9] w-full p-4 rounded-xl text-center text-[13px] leading-relaxed mt-auto">
-                                    ဌာနခွဲစာရေး(၁)ဦး <br/>အကြီးတန်းစာရေး(၂)ဦး <br/>အငယ်တန်းစာရေး(၃)ဦး <br/>ရုံးအကူ(၃)ဦး
+                {/* ခရိုင်အဆင့် ဖွဲ့စည်းပုံ */}
+                {activeTab === 'district' && (
+                    <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="w-full overflow-x-auto custom-scrollbar-hide-mobile bg-emerald-50/30 rounded-3xl border border-emerald-100 p-4 md:p-10">
+                            <div className="min-w-max flex flex-col items-center mx-auto">
+                                <Node title="ခရိုင်ကုသရေးဦးစီးဌာနမှူး" color="emerald" />
+                                <VLine color="emerald" />
+                                
+                                <Node title="ဒုတိယခရိုင်ဦးစီးဌာနမှူး" color="emerald" />
+                                <VLine color="emerald" />
+                                
+                                <div className="flex justify-center w-full">
+                                    <ChildNode isFirst color="emerald">
+                                        <Node title="လက်ထောက်ညွှန်ကြားရေးမှူး" subtitle="(စီမံ/ဘဏ္ဍာ)" color="emerald" />
+                                    </ChildNode>
+                                    
+                                    <ChildNode color="emerald">
+                                        <Node title="လက်ထောက်ညွှန်ကြားရေးမှူး" subtitle="(ကုသရေး)" color="emerald" />
+                                    </ChildNode>
+                                    
+                                    <ChildNode isLast color="emerald">
+                                        <Node title="လက်ထောက်ညွှန်ကြားရေးမှူး" subtitle="(ရောဂါနှိမ်နင်းရေး)" color="emerald" />
+                                    </ChildNode>
                                 </div>
                             </div>
-
-                            {/* Column 2 */}
-                            <div className="flex-1 flex flex-col gap-5 items-center w-1/3">
-                                <div className="bg-[#268a35] border border-[#27ae60] w-full py-3 rounded-lg text-center font-medium shadow-sm">ဒုတိယခရိုင်ကုသရေးဦးစီးဌာနမှူး(စီမံ/ဘဏ္ဍာ)</div>
-                                <div className="border border-[#7c93d9] w-[80%] py-3 rounded-lg text-center text-sm font-medium">လ/ထ ညွှန်ကြားရေးမှူး<br/>(စီမံ/ဘဏ္ဍာ)</div>
-                                <div className="grid grid-cols-2 gap-3 w-full">
-                                    <div className="bg-[#4371d1] border border-[#5a87e8] rounded-lg p-3 text-center text-sm flex items-center justify-center shadow-sm">ဦးစီးအရာရှိ<br/>(အုပ်ချုပ်/စီမံ)</div>
-                                    <div className="bg-[#4371d1] border border-[#5a87e8] rounded-lg p-3 text-center text-sm flex items-center justify-center shadow-sm">ဦးစီးအရာရှိ<br/>(ဘဏ္ဍာရေး)</div>
-                                    <div className="bg-[#4371d1] border border-[#5a87e8] rounded-lg p-3 text-center text-sm flex items-center justify-center shadow-sm">ဦးစီးအရာရှိ<br/>(မှတ်တမ်း/လုပ်ငန်းစစ်)</div>
-                                    <div className="bg-[#4371d1] border border-[#5a87e8] rounded-lg p-3 text-center text-sm flex items-center justify-center shadow-sm">လ/ထအင်ဂျင်နီယာ</div>
-                                </div>
-                                <div className="border border-[#7c93d9] w-full p-4 rounded-xl text-center text-[13px] leading-relaxed mt-auto">
-                                    အငယ်တန်းအင်ဂျင်နီယာ(၃)ဦး(မြို့ပြ၊ လျှပ်စစ်၊ စက်မှု) <br/>ဌာနခွဲစာရေး(၁)ဦး <br/>စာရင်းကိုင်-၂ (၁)ဦး <br/>အကြီးတန်းစာရေး (၂)ဦး <br/>စာရင်းကိုင်-၃ (၁)ဦး <br/>အငယ်တန်းစာရေး (၃)ဦး <br/>စာရင်းကိုင်-၄ (၁)ဦး <br/>ယာဉ်မောင်း (၄)ဦး၊ ရုံးအကူ (၃)ဦး
-                                </div>
-                            </div>
-
-                            {/* Column 3 */}
-                            <div className="flex-1 flex flex-col gap-5 items-center w-1/3">
-                                <div className="bg-[#268a35] border border-[#27ae60] w-full py-3 rounded-lg text-center font-medium shadow-sm">ခရိုင်ပြည်သူ့ဆေးရုံကြီး<br/>(ဆေးရုံ၏ဖွဲ့စည်းပုံအတိုင်း)</div>
-                                <div className="grow"></div>
-                                <div className="border border-[#7c93d9] w-full p-4 rounded-xl text-center text-[13px] leading-relaxed mt-auto">
-                                    ခရိုင်ကုသရုံး - ၆ ရုံး <br/>ကိုယ်ပိုင်အုပ်ချုပ်ခွင့်ရဒေသ - ၂ ရုံး <br/>(ပအိုဝ်း၊ ဓနု)
-                                </div>
-                            </div>
-
                         </div>
                     </div>
-                </div>
-            </div>
+                )}
 
-            {/* ========================================================
-                ၃။ မြို့နယ်ကုသရေးဦးစီးဌာန ဖွဲ့စည်းပုံ
-            ======================================================== */}
-            <div className="bg-[#243b87] rounded-3xl md:rounded-4xl shadow-xl border border-slate-200 p-6 md:p-10 text-white relative">
-                
-                {/* ညာဘက်အပေါ်ထောင့်က Info Table */}
-                <div className="relative md:absolute top-0 right-0 md:top-8 md:right-8 mb-6 md:mb-0 w-full md:w-56 bg-white text-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-200 text-xs md:text-sm">
-                    <div className="bg-[#4371d1] text-white p-2 md:p-3 text-center font-medium">ဆေးရုံ၏ဖွဲ့စည်းပုံတွင်ပြင်ဆင်တိုးချဲ့မည့်ဖွဲ့စည်းပုံအင်အား</div>
-                    <div className="flex justify-between p-2 border-b border-slate-100 bg-slate-50"><span className="pl-2">အရာထမ်း</span><span className="pr-2 font-bold">၄</span></div>
-                    <div className="flex justify-between p-2 border-b border-slate-100"><span className="pl-2">အမှုထမ်း</span><span className="pr-2 font-bold">၁၃</span></div>
-                    <div className="flex justify-between p-2 bg-slate-50"><span className="pl-2">စုစုပေါင်း</span><span className="pr-2 font-bold">၁၇</span></div>
-                </div>
-
-                <h2 className="text-2xl md:text-3xl font-bold text-center text-[#fbbc04] mb-8 md:mb-12 mt-2 md:mt-4">
-                    မြို့နယ်ကုသရေးဦးစီးဌာန ဖွဲ့စည်းပုံ
-                </h2>
-
-                <div className="w-full overflow-x-auto custom-scrollbar-hide-mobile">
-                    <div className="min-w-200 flex flex-col items-center pb-4">
-                        
-                        {/* Top Node */}
-                        <div className="bg-[#d9771e] border border-[#e67e22] text-white px-8 py-4 rounded-lg font-medium text-base md:text-lg mb-10 text-center shadow-md max-w-2xl">
-                            ဆေးရုံအုပ် / မြို့နယ်ကုသရေးဦးစီးဌာနမှူး<br/>(၃၀၈၀၀၀-၄၀၀၀-၃၂၈၀၀၀)
-                        </div>
-
-                        {/* 4 Branches Grid */}
-                        <div className="grid grid-cols-4 gap-4 w-full mb-8">
-                            <div className="bg-[#4371d1] border border-[#5a87e8] rounded-lg p-4 text-center text-sm flex items-center justify-center shadow-sm font-medium">ဦးစီးအရာရှိ<br/>(အုပ်ချုပ်/စီမံ)</div>
-                            <div className="bg-[#4371d1] border border-[#5a87e8] rounded-lg p-4 text-center text-sm flex items-center justify-center shadow-sm font-medium">ဦးစီးအရာရှိ<br/>(သူနာပြု)</div>
-                            <div className="bg-[#4371d1] border border-[#5a87e8] rounded-lg p-4 text-center text-sm flex items-center justify-center shadow-sm font-medium">ဦးစီးအရာရှိ<br/>(ဘဏ္ဍာရေး)</div>
-                            <div className="bg-[#4371d1] border border-[#5a87e8] rounded-lg p-4 text-center text-sm flex items-center justify-center shadow-sm font-medium">မြို့နယ်ပြည်သူ့ဆေးရုံ<br/>(ဆေးရုံ၏ဖွဲ့စည်းပုံအတိုင်း)</div>
-                        </div>
-
-                        {/* Footers */}
-                        <div className="flex w-full gap-6 justify-center items-start">
-                            <div className="border border-[#7c93d9] w-[45%] p-5 rounded-xl text-center text-[13px] leading-relaxed">
-                                အငယ်တန်းအင်ဂျင်နီယာ (၁)ဦး<br/>ဌာနခွဲစာရေး (၂)ဦး<br/>အကြီးတန်းစာရေး (၂)ဦး<br/>စာရင်းကိုင်-၃ (၁)ဦး<br/>အငယ်တန်းစာရေး (၂)ဦး<br/>စာရင်းကိုင်-၄ (၁)ဦး<br/>ရုံးအကူ (၃)ဦး<br/>ယာဉ်မောင်း (၂)ဦး
-                            </div>
-                            <div className="border border-[#7c93d9] w-[45%] p-5 rounded-xl text-center text-[13px] flex items-center justify-center min-h-25 font-medium text-lg">
-                                မြို့နယ်ကုသရေးဦးစီးဌာန - ၂၀ ရုံး
+                {/* မြို့နယ်အဆင့် ဖွဲ့စည်းပုံ */}
+                {activeTab === 'township' && (
+                    <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="w-full overflow-x-auto custom-scrollbar-hide-mobile bg-amber-50/30 rounded-3xl border border-amber-100 p-4 md:p-10">
+                            <div className="min-w-max flex flex-col items-center mx-auto">
+                                <Node title="မြို့နယ်ကုသရေးဦးစီးဌာနမှူး" color="amber" />
+                                <VLine color="amber" />
+                                
+                                <div className="flex justify-center w-full">
+                                    <ChildNode isFirst color="amber">
+                                        <Node title="မြို့နယ်ပြည်သူ့ဆေးရုံ" color="amber" />
+                                    </ChildNode>
+                                    
+                                    <ChildNode color="amber">
+                                        <Node title="တိုက်နယ်ဆေးရုံများ" color="amber" />
+                                    </ChildNode>
+                                    
+                                    <ChildNode isLast color="amber">
+                                        <Node title="ကျေးလက်ကျန်းမာရေးဌာန" color="amber" />
+                                    </ChildNode>
+                                </div>
                             </div>
                         </div>
-
                     </div>
-                </div>
-            </div>
+                )}
 
+            </div>
         </div>
     );
 }
